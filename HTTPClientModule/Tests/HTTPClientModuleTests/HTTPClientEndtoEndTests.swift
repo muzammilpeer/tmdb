@@ -9,12 +9,7 @@ import XCTest
 import HTTPClientModule
 
 class HTTPClientEndtoEndTests: XCTestCase {
-    private var baseURL: URL {
-        return URL(string: "https://7a94e1a1-0a1e-4f44-b281-878ad929c059.mock.pstmn.io/")!
-    }
-    private func absoluteServerURL(uri:String) -> URL {
-        return URL(string: "\(baseURL.absoluteString)\(uri)")!
-    }
+
     private func ephemeralClient(file: StaticString = #filePath, line: UInt = #line) -> HTTPClient {
         let client = URLSessionHTTPClient(session: URLSession(configuration: .ephemeral))
         trackForMemoryLeaks(client, file: file, line: line)
@@ -33,10 +28,22 @@ class HTTPClientEndtoEndTests: XCTestCase {
         }
     }
     
-    func test_endToEndTestServerPOSTFruit() {
+    func test_endToEndTestServerPOSTFruitSuccess() {
         switch createFruit() {
         case let .success(fruits)?:
             XCTAssertEqual(fruits.errorCode, "0", "Expected success response")
+        case let .failure(error)?:
+            XCTFail("Expected successful fruit result, got \(error) instead")
+            
+        default:
+            XCTFail("Expected successful fruit result, got no result instead")
+        }
+    }
+    
+    func test_endToEndTestServerPOSTFruitWithError() {
+        switch createFruit(errorCode:"404",errorMessage:"error Message") {
+        case let .success(fruits)?:
+            XCTAssertEqual(fruits.errorCode, "404", "Expected success response")
         case let .failure(error)?:
             XCTFail("Expected successful fruit result, got \(error) instead")
             
@@ -67,15 +74,33 @@ class HTTPClientEndtoEndTests: XCTestCase {
             XCTFail("Expected successful fruit result, got no result instead")
         }
     }
+    func test_endToEndTestServerUploadFruitImage() {
+        switch uploadFruitImage() {
+        case let .success(fruits)?:
+            XCTAssertEqual(fruits.errorCode, "0", "Expected success response")
+        case let .failure(error)?:
+            XCTFail("Expected successful fruit result, got \(error) instead")
+            
+        default:
+            XCTFail("Expected successful fruit result, got no result instead")
+        }
+    }
+    
+    func test_endToEndTestServerUploadFruitImageMultiPart() {
+        switch uploadFruitImageMultiPart() {
+        case let .success(fruits)?:
+            XCTAssertEqual(fruits.errorCode, "0", "Expected success response")
+        case let .failure(error)?:
+            XCTFail("Expected successful fruit result, got \(error) instead")
+            
+        default:
+            XCTFail("Expected successful fruit result, got no result instead")
+        }
+    }
     
 }
 extension HTTPClientEndtoEndTests
 {
-    private func imageURL(at index: Int) -> URL {
-        return URL(string: "https://url-\(index+1).com")!
-    }
-    
-   
     private func getFruits(file: StaticString = #filePath, line: UInt = #line) -> Swift.Result<[StubFruitImage], Error>? {
         let client = ephemeralClient()
         let exp = expectation(description: "Wait for load completion")
@@ -96,14 +121,13 @@ extension HTTPClientEndtoEndTests
         return receivedResult
     }
     
-    private func createFruit(file: StaticString = #filePath, line: UInt = #line) -> Swift.Result<Root, Error>? {
+    private func createFruit(errorCode:String?="0",errorMessage:String?="success",file: StaticString = #filePath, line: UInt = #line) -> Swift.Result<Root, Error>? {
         let client = ephemeralClient()
         let exp = expectation(description: "Wait for load completion")
         
         var receivedResult: Swift.Result<Root, Error>?
-        let item:RemoteFruitItem = RemoteFruitItem.init(id: nil, name: "Orange", color: "orange", image: nil)
         
-        client.post(from: absoluteServerURL(uri: "createFruit"), codableRequestBody: item) { result in
+        client.post(from: absoluteServerURL(uri: "createFruit").appendingPathComponent(errorCode ?? "").appendingPathComponent(errorMessage ?? ""), codableRequestBody: anyFruitItem) { result in
             receivedResult = result.flatMap { (data, response) in
                 do {
                     return .success(try StubFruitItemsMapper<Root>.validate(data, from: response))
@@ -118,14 +142,13 @@ extension HTTPClientEndtoEndTests
         return receivedResult
     }
     
-    private func updateFruit(file: StaticString = #filePath, line: UInt = #line) -> Swift.Result<Root, Error>? {
+    private func updateFruit(errorCode:String?="0",errorMessage:String?="success",file: StaticString = #filePath, line: UInt = #line) -> Swift.Result<Root, Error>? {
         let client = ephemeralClient()
         let exp = expectation(description: "Wait for load completion")
         
         var receivedResult: Swift.Result<Root, Error>?
-        let item:RemoteFruitItem = RemoteFruitItem.init(id: nil, name: "Orange", color: "orange", image: nil)
         
-        client.put(from: absoluteServerURL(uri: "updateFruit"), codableRequestBody: item) { result in
+        client.put(from: absoluteServerURL(uri: "updateFruit").appendingPathComponent(errorCode ?? "").appendingPathComponent(errorMessage ?? ""), codableRequestBody: anyFruitItem) { result in
             receivedResult = result.flatMap { (data, response) in
                 do {
                     return .success(try StubFruitItemsMapper<Root>.validate(data, from: response))
@@ -139,14 +162,13 @@ extension HTTPClientEndtoEndTests
         
         return receivedResult
     }
-    private func deleteFruit(file: StaticString = #filePath, line: UInt = #line) -> Swift.Result<Root, Error>? {
+    private func deleteFruit(errorCode:String?="0",errorMessage:String?="success",file: StaticString = #filePath, line: UInt = #line) -> Swift.Result<Root, Error>? {
         let client = ephemeralClient()
         let exp = expectation(description: "Wait for load completion")
         
         var receivedResult: Swift.Result<Root, Error>?
-        let item:RemoteFruitItem = RemoteFruitItem.init(id: nil, name: "Orange", color: "orange", image: nil)
         
-        client.delete(from: absoluteServerURL(uri: "deleteFruit"), codableRequestBody: item) { result in
+        client.delete(from: absoluteServerURL(uri: "deleteFruit").appendingPathComponent(errorCode ?? "").appendingPathComponent(errorMessage ?? ""), codableRequestBody: anyFruitItem) { result in
             receivedResult = result.flatMap { (data, response) in
                 do {
                     return .success(try StubFruitItemsMapper<Root>.validate(data, from: response))
@@ -160,5 +182,48 @@ extension HTTPClientEndtoEndTests
         
         return receivedResult
     }
+    
+    private func uploadFruitImage(errorCode:String?="0",errorMessage:String?="success",file: StaticString = #filePath, line: UInt = #line) -> Swift.Result<Root, Error>? {
+        let client = ephemeralClient()
+        let exp = expectation(description: "Wait for load completion")
+        
+        var receivedResult: Swift.Result<Root, Error>?
+        
+        client.postMultiPartFile(from: absoluteServerURL(uri: "uploadFruitImage").appendingPathComponent(errorCode ?? "").appendingPathComponent(errorMessage ?? ""), fileURL: anyLocalFileURL) { result in
+            receivedResult = result.flatMap { (data, response) in
+                do {
+                    return .success(try StubFruitItemsMapper<Root>.validate(data, from: response))
+                } catch {
+                    return .failure(error)
+                }
+            }
+            exp.fulfill()
+        }
+        wait(for: [exp], timeout: 5.0)
+        
+        return receivedResult
+    }
+    
+    private func uploadFruitImageMultiPart(errorCode:String?="0",errorMessage:String?="success",file: StaticString = #filePath, line: UInt = #line) -> Swift.Result<Root, Error>? {
+        let client = ephemeralClient()
+        let exp = expectation(description: "Wait for load completion")
+        
+        var receivedResult: Swift.Result<Root, Error>?
+        let localFileBinaryData = try! Data(contentsOf: anyLocalFileURL)
 
+      
+        client.postMultiPartData(from: absoluteServerURL(uri: "uploadFruitImage").appendingPathComponent(errorCode ?? "").appendingPathComponent(errorMessage ?? ""), binaryData: localFileBinaryData, codableRequestBody: anyFruitItem) { result in
+            receivedResult = result.flatMap { (data, response) in
+                do {
+                    return .success(try StubFruitItemsMapper<Root>.validate(data, from: response))
+                } catch {
+                    return .failure(error)
+                }
+            }
+            exp.fulfill()
+        }
+        wait(for: [exp], timeout: 5.0)
+        
+        return receivedResult
+    }
 }

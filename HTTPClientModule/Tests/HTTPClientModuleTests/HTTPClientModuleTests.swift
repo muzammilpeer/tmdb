@@ -1,5 +1,7 @@
 import XCTest
-@testable import HTTPClientModule
+//@testable import HTTPClientModule
+import HTTPClientModule
+
 
 final class HTTPClientModuleTests: XCTestCase {
     func testExample() throws {

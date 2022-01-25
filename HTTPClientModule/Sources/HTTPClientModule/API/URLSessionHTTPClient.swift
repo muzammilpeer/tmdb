@@ -91,7 +91,6 @@ extension URLSessionHTTPClient : HTTPClient
         httpBody.appendString("--\(boundary)--")
 
         request.httpBody = httpBody as Data
-        print(String(data: httpBody as Data, encoding: .utf8)!)
         
         let task = session.uploadTask(
             with: request,
@@ -116,9 +115,6 @@ extension URLSessionHTTPClient : HTTPClient
     public func postMultiPartFile(from url: URL ,fileURL: URL, completion: @escaping (HTTPClient.Result) -> Void) -> HTTPClientTask {
         var request:URLRequest = self.generateURLRequest(from: url)
         request.httpMethod = "POST"
-//        if !fileURL.isFileURL {
-//            throw UnexpectedValuesRepresentation()
-//        }
 
         let task = session.uploadTask(
             with: request,

@@ -23,6 +23,8 @@ let package = Package(
             dependencies: []),
         .testTarget(
             name: "HTTPClientModuleTests",
-            dependencies: ["HTTPClientModule"]),
+            dependencies: ["HTTPClientModule"],
+            resources: [.copy("Resources")]
+        ),
     ]
 )

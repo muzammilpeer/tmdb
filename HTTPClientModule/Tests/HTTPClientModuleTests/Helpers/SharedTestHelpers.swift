@@ -13,6 +13,20 @@ func anyNSError() -> NSError {
 func anyURL() -> URL {///movie/{movie_id}/rating
     return URL(string: "https://api.themoviedb.org/3/movie/550/rating?api_key=a9dfed6dd4d408d46105886b9064d3f9")!
 }
+private var baseURL: URL {
+    return URL(string: "https://7a94e1a1-0a1e-4f44-b281-878ad929c059.mock.pstmn.io/")!
+}
+func absoluteServerURL(uri:String) -> URL {
+    return URL(string: "\(baseURL.absoluteString)\(uri)")!
+}
+var anyLocalFileURL:URL {
+    let bundle = Bundle.module
+    return bundle.url(forResource: "SampleFile", withExtension: "jpg", subdirectory: "Resources")!
+}
+
+var anyFruitItem:RemoteFruitItem {
+    return RemoteFruitItem.init(id: nil, name: "Orange", color: "orange", image: nil)
+}
 
 func anyData() -> Data {
     return Data("any data".utf8)
